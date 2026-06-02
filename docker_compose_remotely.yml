@@ -1,0 +1,65 @@
+---
+# Remotely - web-based remote desktop and IT support tool
+# Port 5000: web UI - put behind Nginx Proxy Manager with SSL + WebSocket support
+# Requires X-Forwarded-Proto https header in NPM Advanced tab
+# PostgreSQL has NO host port exposed - internal only (correct by design)
+services:
+  remotely:
+    image: immybot/remotely:latest
+    container_name: remotely
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./var/www/remotely:/app/AppData
+    networks:
+      - remotely-net
+    environment:
+      ASPNETCORE_ENVIRONMENT: "Production"
+      ASPNETCORE_HTTP_PORTS: "5000"
+      Serilog__MinimumLevel__Override__Microsoft.AspNetCore: "Warning"
+      Serilog__MinimumLevel__Override__System: "Warning"
+      Remotely_ApplicationOptions__DbProvider: "PostgreSQL"
+      Remotely_ApplicationOptions__DockerGateway: "${PREFERRED_GATEWAY}"
+      Remotely_ConnectionStrings__SQLite: "Data Source=/app/AppData/Remotely.db"
+      Remotely_ConnectionStrings__PostgreSQL: "Host=postgres;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD};"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000"]
+      interval: 30s
+      timeout: 15s
+      retries: 5
+      start_period: 60s
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: remotely-postgres
+    restart: unless-stopped
+    volumes:
+      - ./pg_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: "${POSTGRES_USER}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
+      POSTGRES_DB: "${POSTGRES_DB}"
+    networks:
+      - remotely-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+networks:
+  default:
+    name: my-main-net
+    external: true
+  remotely-net:
+    name: remotely-network
+    driver: bridge
+    ipam:
+      config:
+        - subnet: "${PREFERRED_SUBNET}"
+          gateway: "${PREFERRED_GATEWAY}"
