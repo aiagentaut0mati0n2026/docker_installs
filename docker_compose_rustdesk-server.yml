@@ -1,0 +1,54 @@
+---
+# RustDesk Server - self-hosted relay and signaling server for RustDesk clients
+# hbbs: ID/rendezvous server | hbbr: relay server
+# Ports: 21115/tcp, 21116/tcp+udp, 21117/tcp, 21118/tcp, 21119/tcp
+# RustDesk does NOT go behind Nginx Proxy Manager - uses raw TCP/UDP directly
+# Open all ports in your firewall. Back up hbbs/ key pair - losing it requires all clients to re-pair.
+services:
+  hbbs:
+    image: rustdesk/rustdesk-server:latest
+    container_name: hbbs
+    restart: unless-stopped
+    command: hbbs -r "${RUSTDESK_FQDN}:21117" -k "${RUSTDESK_SECRET_KEY}"
+    ports:
+      - "21115:21115"
+      - "21116:21116"
+      - "21116:21116/udp"
+      - "21118:21118"
+    volumes:
+      - ./hbbs:/root
+    networks:
+      - rustdesk-net
+    depends_on:
+      hbbr:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "sh", "-c", "ss -tlnp | grep -q 21116"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+  hbbr:
+    image: rustdesk/rustdesk-server:latest
+    container_name: hbbr
+    restart: unless-stopped
+    command: hbbr -k "${RUSTDESK_SECRET_KEY}"
+    ports:
+      - "21117:21117"
+      - "21119:21119"
+    volumes:
+      - ./hbbr:/root
+    networks:
+      - rustdesk-net
+    healthcheck:
+      test: ["CMD", "sh", "-c", "ss -tlnp | grep -q 21117"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+networks:
+  rustdesk-net:
+    driver: bridge
+    internal: false
