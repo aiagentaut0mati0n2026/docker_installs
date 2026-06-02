@@ -1,0 +1,9 @@
+# Remotely environment variables
+# Never commit this file with real credentials to a public repository.
+
+POSTGRES_USER=remotely_user
+POSTGRES_PASSWORD=changeMe_useAStrongPasswordHere
+POSTGRES_DB=Remotely
+PREFERRED_SUBNET=172.28.0.0/16
+PREFERRED_GATEWAY=172.28.0.1
+PREFERRED_HOST_PORT=5000
