@@ -1,0 +1,33 @@
+---
+# Navidrome - self-hosted music streaming server (Subsonic API compatible)
+# Port 4533: web UI and API - put behind Nginx Proxy Manager with SSL
+# Music volume is mounted read-only (:ro) to protect your library
+services:
+  navidrome:
+    image: deluan/navidrome:latest
+    container_name: navidrome
+    restart: unless-stopped
+    ports:
+      - "4533:4533"
+    environment:
+      ND_SCANINTERVAL: "15m"
+      ND_LOGLEVEL: "info"
+      ND_BASEURL: ""
+      ND_SESSIONTIMEOUT: "24h"
+      ND_ENABLETRANSCODINGCONFIG: "false"
+      ND_DEFAULTLANGUAGE: "en"
+      TZ: "UTC"
+    volumes:
+      - ./data:/data
+      - ./data/music:/music:ro
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:4533/ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+networks:
+  default:
+    name: my-main-net
+    external: true
