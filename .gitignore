@@ -1,0 +1,15 @@
+# Local install logs
+docker-script-install.log
+
+# Environment files with real credentials — never commit these
+*.env.local
+.env
+
+# macOS
+.DS_Store
+
+# Editor directories
+.idea/
+.vscode/
+*.swp
+*.swo
