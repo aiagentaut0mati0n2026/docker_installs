@@ -1,0 +1,28 @@
+---
+# Uptime Kuma - self-hosted uptime monitoring with notifications
+# Port 3001: web UI - put behind Nginx Proxy Manager with SSL
+# NOTE: :latest tag is DEPRECATED (frozen at v1). Use :2 for current stable v2.
+# See: https://github.com/louislam/uptime-kuma/wiki/Docker-Tags
+# NPM settings: WebSocket Support YES (required for live dashboard), Force SSL YES
+services:
+  uptime-kuma:
+    image: louislam/uptime-kuma:2
+    container_name: uptime-kuma
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./uptime-kuma/data:/app/data
+    environment:
+      TZ: "UTC"
+    healthcheck:
+      test: ["CMD", "extra/healthcheck"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+networks:
+  default:
+    name: my-main-net
+    external: true
